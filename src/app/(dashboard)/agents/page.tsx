@@ -130,6 +130,9 @@ export default function AgentsPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [newAgentName, setNewAgentName] = useState("");
+  const [newAgentDescription, setNewAgentDescription] = useState("");
+  const [newAgentCallType, setNewAgentCallType] = useState("");
   const totalPages = Math.ceil(agents.length / PAGE_SIZE);
   const paginatedAgents = agents.slice(
     (page - 1) * PAGE_SIZE,
@@ -157,18 +160,25 @@ export default function AgentsPage() {
             <div className="space-y-4 py-2">
               <div className="space-y-2">
                 <Label htmlFor="agent-name">Agent Name</Label>
-                <Input id="agent-name" placeholder="e.g. Sales Assistant" />
+                <Input
+                  id="agent-name"
+                  placeholder="e.g. Sales Assistant"
+                  value={newAgentName}
+                  onChange={(e) => setNewAgentName(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="agent-description">Description</Label>
                 <Input
                   id="agent-description"
                   placeholder="e.g. Handles inbound sales inquiries"
+                  value={newAgentDescription}
+                  onChange={(e) => setNewAgentDescription(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Call Type</Label>
-                <Select>
+                <Select value={newAgentCallType} onValueChange={setNewAgentCallType}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a call type" />
                   </SelectTrigger>
@@ -190,7 +200,19 @@ export default function AgentsPage() {
               >
                 Cancel
               </Button>
-              <Button>Create Agent</Button>
+              <Button
+                onClick={() => {
+                  const params = new URLSearchParams();
+                  if (newAgentName) params.set("name", newAgentName);
+                  if (newAgentDescription) params.set("description", newAgentDescription);
+                  if (newAgentCallType) params.set("callType", newAgentCallType);
+                  const query = params.toString();
+                  router.push(`/agents/createAgent${query ? `?${query}` : ""}`);
+                  setDialogOpen(false);
+                }}
+              >
+                Create Agent
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
