@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
@@ -167,7 +168,7 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
   const [testFirstName, setTestFirstName] = useState("");
   const [testLastName, setTestLastName] = useState("");
   const [testGender, setTestGender] = useState("");
-  const [testPhone, setTestPhone] = useState("+20");
+  const [testPhone, setTestPhone] = useState("");
 
   // Badge counts for required fields
   const basicSettingsMissing = [agentName, callType, language, voice, prompt, model].filter(
@@ -662,12 +663,11 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
                     <Label htmlFor="test-phone">
                       Phone Number <span className="text-destructive">*</span>
                     </Label>
-                    <Input
-                      id="test-phone"
-                      type="tel"
-                      placeholder="+20 1XX XXX XXXX"
+                    <PhoneInput
+                      defaultCountry="EG"
                       value={testPhone}
-                      onChange={(e) => setTestPhone(e.target.value)}
+                      onChange={(value) => setTestPhone(value)}
+                      placeholder="Enter phone number"
                     />
                   </div>
 
