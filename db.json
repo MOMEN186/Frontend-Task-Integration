@@ -1,35 +1,429 @@
 {
   "languages": [
-    { "id": "en", "name": "English", "code": "en" },
-    { "id": "ar", "name": "Arabic", "code": "ar" },
-    { "id": "fr", "name": "French", "code": "fr" },
-    { "id": "es", "name": "Spanish", "code": "es" },
-    { "id": "de", "name": "German", "code": "de" },
-    { "id": "it", "name": "Italian", "code": "it" },
-    { "id": "pt", "name": "Portuguese", "code": "pt" },
-    { "id": "zh", "name": "Chinese", "code": "zh" },
-    { "id": "ja", "name": "Japanese", "code": "ja" },
-    { "id": "ko", "name": "Korean", "code": "ko" }
+    {
+      "id": "en",
+      "name": "English",
+      "code": "en"
+    },
+    {
+      "id": "ar",
+      "name": "Arabic",
+      "code": "ar"
+    },
+    {
+      "id": "fr",
+      "name": "French",
+      "code": "fr"
+    },
+    {
+      "id": "es",
+      "name": "Spanish",
+      "code": "es"
+    },
+    {
+      "id": "de",
+      "name": "German",
+      "code": "de"
+    },
+    {
+      "id": "it",
+      "name": "Italian",
+      "code": "it"
+    },
+    {
+      "id": "pt",
+      "name": "Portuguese",
+      "code": "pt"
+    },
+    {
+      "id": "zh",
+      "name": "Chinese",
+      "code": "zh"
+    },
+    {
+      "id": "ja",
+      "name": "Japanese",
+      "code": "ja"
+    },
+    {
+      "id": "ko",
+      "name": "Korean",
+      "code": "ko"
+    }
   ],
   "voices": [
-    { "id": "alloy", "name": "Alloy", "tag": "Premium", "language": "en" },
-    { "id": "echo", "name": "Echo", "tag": "Standard", "language": "en" },
-    { "id": "fable", "name": "Fable", "tag": "Premium", "language": "en" },
-    { "id": "onyx", "name": "Onyx", "tag": "Standard", "language": "en" },
-    { "id": "nova", "name": "Nova", "tag": "Premium", "language": "en" },
-    { "id": "shimmer", "name": "Shimmer", "tag": "Standard", "language": "en" }
+    {
+      "id": "alloy",
+      "name": "Alloy",
+      "tag": "Premium",
+      "language": "en"
+    },
+    {
+      "id": "echo",
+      "name": "Echo",
+      "tag": "Standard",
+      "language": "en"
+    },
+    {
+      "id": "fable",
+      "name": "Fable",
+      "tag": "Premium",
+      "language": "en"
+    },
+    {
+      "id": "onyx",
+      "name": "Onyx",
+      "tag": "Standard",
+      "language": "en"
+    },
+    {
+      "id": "nova",
+      "name": "Nova",
+      "tag": "Premium",
+      "language": "en"
+    },
+    {
+      "id": "shimmer",
+      "name": "Shimmer",
+      "tag": "Standard",
+      "language": "en"
+    }
   ],
   "prompts": [
-    { "id": "default", "name": "Default Prompt", "description": "General-purpose prompt" },
-    { "id": "sales", "name": "Sales Prompt", "description": "Optimized for sales" },
-    { "id": "support", "name": "Support Prompt", "description": "Optimized for support" },
-    { "id": "custom", "name": "Custom Prompt", "description": "Build your own" }
+    {
+      "id": "default",
+      "name": "Default Prompt",
+      "description": "General-purpose prompt"
+    },
+    {
+      "id": "sales",
+      "name": "Sales Prompt",
+      "description": "Optimized for sales"
+    },
+    {
+      "id": "support",
+      "name": "Support Prompt",
+      "description": "Optimized for support"
+    },
+    {
+      "id": "custom",
+      "name": "Custom Prompt",
+      "description": "Build your own"
+    }
   ],
   "models": [
-    { "id": "pro", "name": "Pro", "description": "Highest quality, lowest latency" },
-    { "id": "standard", "name": "Standard", "description": "Balanced quality and cost" },
-    { "id": "flex", "name": "Flex", "description": "Cost-effective for high volume" }
+    {
+      "id": "pro",
+      "name": "Pro",
+      "description": "Highest quality, lowest latency"
+    },
+    {
+      "id": "standard",
+      "name": "Standard",
+      "description": "Balanced quality and cost"
+    },
+    {
+      "id": "flex",
+      "name": "Flex",
+      "description": "Cost-effective for high volume"
+    }
   ],
-  "agents": [],
-  "attachments": []
+  "agents": [
+    {
+      "id": 1
+    },
+    {
+      "id": 2
+    },
+    {
+      "id": 3
+    },
+    {
+      "id": 4
+    },
+    {
+      "id": 5
+    },
+    {
+      "id": 6
+    },
+    {
+      "id": 7
+    },
+    {
+      "id": 8
+    },
+    {
+      "id": 9
+    },
+    {
+      "id": 10
+    },
+    {
+      "name": "aaa",
+      "description": "aaa",
+      "callType": "outbound",
+      "language": "ar",
+      "voice": "alloy",
+      "prompt": "sales",
+      "model": "flex",
+      "latency": [
+        0.5
+      ],
+      "speed": [
+        110
+      ],
+      "callScript": "",
+      "serviceDescription": "",
+      "attachments": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "tools": {
+        "allowHangUp": true,
+        "allowCallback": false,
+        "liveTransfer": false
+      },
+      "id": 11
+    },
+    {
+      "name": "aaa",
+      "description": "aaa",
+      "callType": "inbound",
+      "language": "ar",
+      "voice": "echo",
+      "prompt": "sales",
+      "model": "standard",
+      "latency": 0.5,
+      "speed": 110,
+      "callScript": "",
+      "serviceDescription": "",
+      "attachments": [],
+      "tools": {
+        "allowHangUp": true,
+        "allowCallback": false,
+        "liveTransfer": false
+      },
+      "id": 12
+    },
+    {
+      "name": "aaa",
+      "description": "aaa",
+      "callType": "outbound",
+      "language": "ar",
+      "voice": "alloy",
+      "prompt": "sales",
+      "model": "standard",
+      "latency": 0.5,
+      "speed": 110,
+      "callScript": "",
+      "serviceDescription": "",
+      "attachments": [],
+      "tools": {
+        "allowHangUp": true,
+        "allowCallback": false,
+        "liveTransfer": false
+      },
+      "id": 13
+    }
+  ],
+  "attachments": [
+    {
+      "id": 1
+    },
+    {
+      "id": 2
+    },
+    {
+      "key": "8512c010-02ec-4292-b4ed-075f63db1507",
+      "fileName": "Munjz Proposal.pdf",
+      "fileSize": 341224,
+      "mimeType": "application/pdf",
+      "id": 3
+    },
+    {
+      "key": "2c3fa785-76af-4978-ae0e-fd02b724118e",
+      "fileName": "AI-Powered SaaS Platform Pitch.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 4
+    },
+    {
+      "key": "fdb16884-9f54-4fe4-bc1a-40ee76f0599c",
+      "fileName": "AI-Powered SaaS Platform Pitch.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 5
+    },
+    {
+      "key": "4c3ee132-6663-4aca-b22c-68b495d990f6",
+      "fileName": "Momen Ehab - Full-Stack Next.js Developer.pdf",
+      "fileSize": 400011,
+      "mimeType": "application/pdf",
+      "id": 6
+    },
+    {
+      "key": "0221b5a9-ffae-4b12-83f5-e8256c755a73",
+      "fileName": "Momen_Ehab_ATS_Resume.docx",
+      "fileSize": 37456,
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "id": 7
+    },
+    {
+      "key": "da11bb1c-b63f-408b-834e-b0f5ac8869be",
+      "fileName": "Munjz Proposal.pdf",
+      "fileSize": 341224,
+      "mimeType": "application/pdf",
+      "id": 8
+    },
+    {
+      "key": "0737cae4-cd00-4d83-aae6-fd3ec32f6249",
+      "fileName": "New-Requirements-for-Si-Doc.docx",
+      "fileSize": 752177,
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "id": 9
+    },
+    {
+      "key": "0370b359-4fc3-4d2d-b6df-3bea84fed00f",
+      "fileName": "row-consumer-fees-en-21-apr-2025-v3.pdf",
+      "fileSize": 1009839,
+      "mimeType": "application/pdf",
+      "id": 10
+    },
+    {
+      "key": "3296f2de-d5ff-45c0-a4ff-9ac76102b27a",
+      "fileName": "Technical Project Transformation.pdf",
+      "fileSize": 391292,
+      "mimeType": "application/pdf",
+      "id": 11
+    },
+    {
+      "key": "8324672f-d08c-4a7c-98f2-233107702605",
+      "fileName": "Tripweb Backend Architecture.pdf",
+      "fileSize": 478326,
+      "mimeType": "application/pdf",
+      "id": 12
+    },
+    {
+      "key": "4274ce8b-e063-4687-bdcf-3d1407218374",
+      "fileName": "Turn Ideas into Products ar.pdf",
+      "fileSize": 2380793,
+      "mimeType": "application/pdf",
+      "id": 13
+    },
+    {
+      "key": "923ed38f-0d42-4bf9-beea-396cf928e8bd",
+      "fileName": "Turn Ideas into Products.pdf",
+      "fileSize": 2917567,
+      "mimeType": "application/pdf",
+      "id": 14
+    },
+    {
+      "key": "9c760ca2-d671-4600-b1b8-b677021e3fb6",
+      "fileName": "AI-Powered SaaS Platform Pitch.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 15
+    },
+    {
+      "key": "a974f6d6-8c6a-49d1-9fd9-e7a2058fc8a3",
+      "fileName": "Momen Ehab - Full-Stack Next.js Developer.pdf",
+      "fileSize": 400011,
+      "mimeType": "application/pdf",
+      "id": 16
+    },
+    {
+      "key": "472e58ed-7301-4536-8cf9-d8e78c04179f",
+      "fileName": "Momen_Ehab_ATS_Resume.docx",
+      "fileSize": 37456,
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "id": 17
+    },
+    {
+      "key": "18f48e24-4770-4c65-bc63-fc987b28b91b",
+      "fileName": "Munjz Proposal.pdf",
+      "fileSize": 341224,
+      "mimeType": "application/pdf",
+      "id": 18
+    },
+    {
+      "key": "a80f3157-43a0-4c20-a03f-f2b53a401814",
+      "fileName": "AI-Powered SaaS Platform Pitch.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 19
+    },
+    {
+      "key": "daaff742-92a6-467e-85cf-013788d0db9a",
+      "fileName": "Momen Ehab - Full-Stack Next.js Developer.pdf",
+      "fileSize": 400011,
+      "mimeType": "application/pdf",
+      "id": 20
+    },
+    {
+      "key": "4f579e79-cbfd-4aee-90a7-af6be256b3a2",
+      "fileName": "Momen_Ehab_ATS_Resume.docx",
+      "fileSize": 37456,
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "id": 21
+    },
+    {
+      "key": "0dcfa187-6d79-40ff-bd62-18c1e79fe4cf",
+      "fileName": "Munjz Proposal.pdf",
+      "fileSize": 341224,
+      "mimeType": "application/pdf",
+      "id": 22
+    },
+    {
+      "key": "4c43ef9b-0559-48d5-8aa1-f308934e3d3f",
+      "fileName": "New-Requirements-for-Si-Doc.docx",
+      "fileSize": 752177,
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "id": 23
+    },
+    {
+      "key": "b625b7d3-ee25-4219-896b-7d25ad944c6a",
+      "fileName": "AI-Powered SaaS Platform Pitch.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 24
+    },
+    {
+      "key": "2955ad91-945f-4c20-bec6-f323976fa6e5",
+      "fileName": "Momen Ehab - Full-Stack Next.js Developer.pdf",
+      "fileSize": 400011,
+      "mimeType": "application/pdf",
+      "id": 25
+    },
+    {
+      "key": "d540f5ad-230c-499e-85d8-bfdfc5b6ad62",
+      "fileName": "Momen_Ehab_ATS_Resume.docx",
+      "fileSize": 37456,
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "id": 26
+    },
+    {
+      "key": "26f056cf-162b-4b15-8449-95d6396177e6",
+      "fileName": "Munjz Proposal.pdf",
+      "fileSize": 341224,
+      "mimeType": "application/pdf",
+      "id": 27
+    },
+    {
+      "key": "726a51d1-f731-4741-853c-7e6b212c69b2",
+      "fileName": "New-Requirements-for-Si-Doc.docx",
+      "fileSize": 752177,
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "id": 28
+    },
+    {
+      "key": "b420f15e-acd6-4a61-8859-565f58eae3ba",
+      "fileName": "row-consumer-fees-en-21-apr-2025-v3.pdf",
+      "fileSize": 1009839,
+      "mimeType": "application/pdf",
+      "id": 29
+    }
+  ]
 }

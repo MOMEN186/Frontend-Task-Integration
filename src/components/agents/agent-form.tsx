@@ -35,16 +35,22 @@ import {
   Select,
   SelectContent,
   SelectItem,
-  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 
-interface UploadedFile {
+type UploadedFile = {
   name: string;
   size: number;
   file: File;
-}
+
+  progress: number; // 0..100
+  status: UploadStatus;
+  error?: string;
+
+  key?: string;
+  attachmentId?: string;
+};
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return bytes + " B";
@@ -104,6 +110,7 @@ function CollapsibleSection({
 }
 
 export interface AgentFormInitialData {
+  id: string;
   agentName?: string;
   description?: string;
   callType?: string;
@@ -116,6 +123,7 @@ export interface AgentFormInitialData {
   callScript?: string;
   serviceDescription?: string;
 }
+type UploadStatus = "queued" | "uploading" | "registering" | "done" | "error";
 
 interface AgentFormProps {
   mode: "create" | "edit";
@@ -175,7 +183,7 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
+  const [ids, setIds] = useState<string[]>([]);
   // Test Call
   const [testFirstName, setTestFirstName] = useState("");
   const [testLastName, setTestLastName] = useState("");
@@ -192,7 +200,9 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
     model,
   ].filter((v) => !v).length;
 
-  // File upload handlers
+  const [agentId, setAgentId] = useState<string | null>(
+    initialData?.id ?? null,
+  ); // File upload handlers
   const ACCEPTED_TYPES = [
     ".pdf",
     ".doc",
@@ -202,26 +212,119 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
     ".xlsx",
     ".xls",
   ];
+  function getErrorMessage(err: unknown) {
+    return err instanceof Error ? err.message : "Something went wrong";
+  }
+  const patchFile = (name: string, patch: Partial<UploadedFile>) => {
+    setUploadedFiles((prev) =>
+      prev.map((f) => (f.name === name ? { ...f, ...patch } : f)),
+    );
+  };
+  function uploadWithProgress(
+    url: string,
+    file: File,
+    onProgress: (p: number) => void,
+  ) {
+    return new Promise<void>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("PUT", url, true);
+      xhr.setRequestHeader("Content-Type", "application/octet-stream");
 
-  const handleFiles = useCallback(
-    (files: FileList | null) => {
-      if (!files) return;
-      const newFiles: UploadedFile[] = [];
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const ext = "." + file.name.split(".").pop()?.toLowerCase();
-        if (ACCEPTED_TYPES.includes(ext)) {
-          newFiles.push({ name: file.name, size: file.size, file });
-        }
+      xhr.upload.onprogress = (e) => {
+        if (!e.lengthComputable) return;
+        const pct = Math.round((e.loaded / e.total) * 100);
+        onProgress(pct);
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) resolve();
+        else reject(new Error(`Upload failed (${xhr.status})`));
+      };
+
+      xhr.onerror = () => reject(new Error("Network error during upload"));
+      xhr.send(file);
+    });
+  }
+  const handleFiles = useCallback(async (files: FileList | null) => {
+    if (!files) return;
+
+    const added: UploadedFile[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const ext = "." + file.name.split(".").pop()?.toLowerCase();
+      if (!ACCEPTED_TYPES.includes(ext)) continue;
+
+      added.push({
+        name: file.name,
+        size: file.size,
+        file,
+        progress: 0,
+        status: "queued",
+      });
+    }
+
+    setUploadedFiles((prev) => [...prev, ...added]);
+
+    for (const f of added) {
+      try {
+        patchFile(f.name, { status: "uploading", progress: 0 });
+
+        // Step 1: signed URL (NO body required; send JSON header only if needed)
+        const r1 = await fetch("/api/attachments/upload-url", {
+          method: "POST",
+        });
+        const { key, signedUrl } = await r1.json();
+
+        patchFile(f.name, { key });
+
+        // Step 2: upload with progress
+        await uploadWithProgress(signedUrl, f.file, (pct) => {
+          patchFile(f.name, { progress: pct });
+        });
+
+        patchFile(f.name, { status: "registering" });
+
+        // Step 3: register attachment
+        const r3 = await fetch("/api/attachments", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            key,
+            fileName: f.name,
+            fileSize: f.size,
+            mimeType: f.file.type || "application/octet-stream",
+          }),
+        });
+
+        const att = await r3.json();
+        patchFile(f.name, {
+          status: "done",
+          attachmentId: att.id,
+          progress: 100,
+        });
+
+        setIds((prev) => [...prev, att.id]);
+      } catch (err: unknown) {
+        patchFile(f.name, {
+          status: "error",
+          error: getErrorMessage(err),
+        });
       }
-      setUploadedFiles((prev) => [...prev, ...newFiles]);
-    },
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  );
-
+  }, []);
   const removeFile = (index: number) => {
-    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+    setUploadedFiles((prev) => {
+      const fileToRemove = prev[index];
+
+      if (fileToRemove?.attachmentId) {
+        setIds((idsPrev) =>
+          idsPrev.filter((id) => id !== fileToRemove.attachmentId),
+        );
+      }
+
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -244,24 +347,91 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
   const saveLabel = mode === "create" ? "Save Agent" : "Save Changes";
   useEffect(() => {
     async function fetchData() {
-      const [lans, voices, pormpts, models] = await Promise.all([
-        fetch(`/mock/api/languages`).then((res) => res.json()),
-        fetch(`/mock/api/voices`).then((res) => res.json()),
-        fetch(`/mock/api/prompts`).then((res) => res.json()),
-        fetch(`/mock/api/models`).then((res) => res.json()),
+      const [langs, voices, pormpts, models] = await Promise.all([
+        fetch(`/api/languages`).then((res) => res.json()),
+        fetch(`/api/voices`).then((res) => res.json()),
+        fetch(`/api/prompts`).then((res) => res.json()),
+        fetch(`/api/models`).then((res) => res.json()),
       ]);
-      setLanguages(lans);
+      setLanguages(langs);
       setVoices(voices);
       setPrompts(pormpts);
       setModels(models);
     }
     fetchData();
   }, []);
+
+  const savedAgent = async () => {
+    if (basicSettingsMissing)
+      return window.alert("Please fill all the required fields");
+    const url = agentId ? `/api/agents/${agentId}` : "/api/agents";
+    try {
+      const res = await fetch(url, {
+        method: agentId ? "PUT" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: agentName,
+          description,
+          callType,
+          language,
+          voice,
+          prompt,
+          model,
+          latency: latency[0],
+          speed: speed[0],
+          callScript,
+          serviceDescription,
+          attachments: ids,
+          tools: {
+            allowHangUp: true,
+            allowCallback: false,
+            liveTransfer: false,
+          },
+        }),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to save agent");
+      }
+      window.alert(`agent ${agentId ? "updated" : "created"} successfully`);
+      const data = await res.json();
+      console.log(data);
+      setAgentId(data?.id);
+      return data?.id;
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const handleAgentSave = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    console.log("Agent saved");
+    await savedAgent();
+  };
+
+  const handleStartCall = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    const agentId = await savedAgent();
+    await fetch(`/api/agents/${agentId}/test-call`, {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        firstName: testFirstName,
+        lastName: testLastName,
+        phoneNumber: testPhone,
+        gender: testGender,
+      }),
+    });
+    console.log("Start call");
+  };
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">{heading}</h1>
-        <Button>{saveLabel}</Button>
+        <Button onClick={handleAgentSave}>{saveLabel}</Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -462,6 +632,7 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
           </CollapsibleSection>
 
           {/* Section 5: Reference Data */}
+          {/* Section 5: Reference Data */}
           <CollapsibleSection
             title="Reference Data"
             description="Enhance your agent's knowledge base with uploaded files."
@@ -486,7 +657,9 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
                   accept={ACCEPTED_TYPES.join(",")}
                   onChange={(e) => handleFiles(e.target.files)}
                 />
+
                 <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
+
                 <p className="mt-2 text-sm font-medium">
                   Drag & drop files here, or{" "}
                   <button
@@ -497,6 +670,7 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
                     browse
                   </button>
                 </p>
+
                 <p className="mt-1 text-xs text-muted-foreground">
                   Accepted: .pdf, .doc, .docx, .txt, .csv, .xlsx, .xls
                 </p>
@@ -504,27 +678,71 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
 
               {/* File list */}
               {uploadedFiles.length > 0 ? (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {uploadedFiles.map((f, i) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between rounded-md border px-3 py-2"
+                      className="rounded-md border px-3 py-3 space-y-2"
                     >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        <span className="text-sm truncate">{f.name}</span>
-                        <span className="text-xs text-muted-foreground shrink-0">
-                          {formatFileSize(f.size)}
-                        </span>
+                      {/* Top row */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+
+                          <span className="text-sm truncate">{f.name}</span>
+
+                          <span className="text-xs text-muted-foreground shrink-0">
+                            {formatFileSize(f.size)}
+                          </span>
+                        </div>
+
+                        {/* Remove button */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 shrink-0"
+                          onClick={() => removeFile(i)}
+                          disabled={
+                            f.status === "uploading" ||
+                            f.status === "registering"
+                          }
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 shrink-0"
-                        onClick={() => removeFile(i)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+
+                      {f.status !== "done" && (
+                        <div className="space-y-1">
+                          {/* Status row */}
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>
+                              {f.status === "queued" && "Queued"}
+                              {f.status === "uploading" && "Uploading..."}
+                              {f.status === "registering" &&
+                                "Registering attachment..."}
+                              {f.status === "error" &&
+                                (f.error ?? "Upload failed")}
+                            </span>
+
+                            <span>{f.progress ?? 0}%</span>
+                          </div>
+
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                            <div
+                              className="h-full bg-primary transition-all duration-300"
+                              style={{
+                                width: `${f.progress ?? 0}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {f.status === "done" && (
+                        <p className="text-xs text-green-600 font-medium">
+                          ✅ Uploaded successfully
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -644,7 +862,7 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
                     />
                   </div>
 
-                  <Button className="w-full">
+                  <Button onClick={handleStartCall} className="w-full">
                     <Phone className="mr-2 h-4 w-4" />
                     Start Test Call
                   </Button>
@@ -658,7 +876,7 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
       {/* Sticky bottom save bar */}
       <div className="sticky bottom-0 -mx-6 -mb-6 border-t bg-background px-6 py-4">
         <div className="flex justify-end">
-          <Button>{saveLabel}</Button>
+          <Button onClick={handleAgentSave}>{saveLabel}</Button>
         </div>
       </div>
     </div>
