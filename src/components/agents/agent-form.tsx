@@ -1,888 +1,170 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
-import { ChevronDown, Upload, X, FileText, Phone } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { PhoneInput } from "@/components/ui/phone-input";
-import { Textarea } from "@/components/ui/textarea";
-import { Slider } from "@/components/ui/slider";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import {
-  Field,
-  FieldContent,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-  FieldTitle,
-} from "@/components/ui/field";
+import { FormProvider, useForm } from "react-hook-form";
+import { useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import BasicSettings from "./BasicSettings";
+import CallScript from "./CallScript";
+import ServiceDescription from "./ServiceDescription";
+import Tools from "./Tools";
+import ReferenceData from "./ReferenceData";
+import TestCallCard, { TestCallPayload } from "./TestCallCard";
+import type { AgentFormInitialData, AgentFormValues } from "@/types/agent";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Toast } from "radix-ui";
-
-type UploadedFile = {
-  name: string;
-  size: number;
-  file: File;
-
-  progress: number; // 0..100
-  status: UploadStatus;
-  error?: string;
-
-  key?: string;
-  attachmentId?: string;
-};
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return bytes + " B";
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
-  return (bytes / (1024 * 1024)).toFixed(1) + " MB";
-}
-
-function CollapsibleSection({
-  title,
-  description,
-  badge,
-  defaultOpen = false,
-  children,
-}: {
-  title: string;
-  description: string;
-  badge?: number;
-  defaultOpen?: boolean;
-  children: React.ReactNode;
-}) {
-  const [open, setOpen] = useState(defaultOpen);
-
-  return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <Card>
-        <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer select-none">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div>
-                  <CardTitle className="text-base">{title}</CardTitle>
-                  <CardDescription className="mt-1">
-                    {description}
-                  </CardDescription>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {badge !== undefined && badge > 0 && (
-                  <Badge variant="destructive">{badge} required</Badge>
-                )}
-                <ChevronDown
-                  className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${
-                    open ? "rotate-180" : ""
-                  }`}
-                />
-              </div>
-            </div>
-          </CardHeader>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <Separator />
-          <CardContent className="pt-6">{children}</CardContent>
-        </CollapsibleContent>
-      </Card>
-    </Collapsible>
-  );
-}
-
-export interface AgentFormInitialData {
-  id: string;
-  agentName?: string;
-  description?: string;
-  callType?: string;
-  language?: string;
-  voice?: string;
-  prompt?: string;
-  model?: string;
-  latency?: number;
-  speed?: number;
-  callScript?: string;
-  serviceDescription?: string;
-}
-type UploadStatus = "queued" | "uploading" | "registering" | "done" | "error";
-
-interface AgentFormProps {
+type AgentFormProps = {
   mode: "create" | "edit";
   initialData?: AgentFormInitialData;
-}
-interface LanguagesDropdown {
-  code: string;
-  id: string;
-  name: string;
-}
-interface VoicesDropdown {
-  id: string;
-  name: string;
-  tag: string;
-  language: string;
-}
-interface ModelsDropdown {
-  id: string;
-  name: string;
-  description: string;
-}
-interface PromptsDropdown {
-  id: string;
-  name: string;
-  description: string;
-}
+};
 
 export function AgentForm({ mode, initialData }: AgentFormProps) {
-  // Form state — initialized from initialData when provided
-  const [agentName, setAgentName] = useState(initialData?.agentName ?? "");
-  const [callType, setCallType] = useState(initialData?.callType ?? "");
-  const [language, setLanguage] = useState(initialData?.language ?? "");
-  const [voice, setVoice] = useState(initialData?.voice ?? "");
-  const [prompt, setPrompt] = useState(initialData?.prompt ?? "");
-  const [model, setModel] = useState(initialData?.model ?? "");
-
-  const [latency, setLatency] = useState([initialData?.latency ?? 0.5]);
-  const [speed, setSpeed] = useState([initialData?.speed ?? 110]);
-  const [description, setDescription] = useState(
-    initialData?.description ?? "",
-  );
-  // dropdown Data
-  const [languages, setLanguages] = useState<LanguagesDropdown[]>([]);
-  const [voices, setVoices] = useState<VoicesDropdown[]>([]);
-  const [models, setModels] = useState<ModelsDropdown[]>([]);
-  const [prompts, setPrompts] = useState<PromptsDropdown[]>([]);
-
-  // Call Script
-  const [callScript, setCallScript] = useState(initialData?.callScript ?? "");
-
-  // Service/Product Description
-  const [serviceDescription, setServiceDescription] = useState(
-    initialData?.serviceDescription ?? "",
-  );
-
-  // Reference Data
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [ids, setIds] = useState<string[]>([]);
-  // Test Call
-  const [testFirstName, setTestFirstName] = useState("");
-  const [testLastName, setTestLastName] = useState("");
-  const [testGender, setTestGender] = useState("");
-  const [testPhone, setTestPhone] = useState("");
-
-  // Badge counts for required fields
-  const basicSettingsMissing = [
-    agentName,
-    callType,
-    language,
-    voice,
-    prompt,
-    model,
-  ].filter((v) => !v).length;
-
   const [agentId, setAgentId] = useState<string | null>(
     initialData?.id ?? null,
-  ); // File upload handlers
-  const ACCEPTED_TYPES = [
-    ".pdf",
-    ".doc",
-    ".docx",
-    ".txt",
-    ".csv",
-    ".xlsx",
-    ".xls",
-  ];
-  function getErrorMessage(err: unknown) {
-    return err instanceof Error ? err.message : "Something went wrong";
-  }
-  const patchFile = (name: string, patch: Partial<UploadedFile>) => {
-    setUploadedFiles((prev) =>
-      prev.map((f) => (f.name === name ? { ...f, ...patch } : f)),
-    );
-  };
-  function uploadWithProgress(
-    url: string,
-    file: File,
-    onProgress: (p: number) => void,
-  ) {
-    return new Promise<void>((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open("PUT", url, true);
-      xhr.setRequestHeader("Content-Type", "application/octet-stream");
+  );
 
-      xhr.upload.onprogress = (e) => {
-        if (!e.lengthComputable) return;
-        const pct = Math.round((e.loaded / e.total) * 100);
-        onProgress(pct);
-      };
+  const methods = useForm<AgentFormValues>({
+    defaultValues: {
+      agentName: initialData?.agentName ?? "",
+      description: initialData?.description ?? "",
+      callType:
+        (initialData?.callType as AgentFormValues["callType"]) ?? "inbound",
+      language: initialData?.language ?? "",
+      voice: initialData?.voice ?? "",
+      prompt: initialData?.prompt ?? "",
+      model: initialData?.model ?? "",
+      latency: initialData?.latency ?? 0.5,
+      speed: initialData?.speed ?? 110,
+      callScript: initialData?.callScript ?? "",
+      serviceDescription: initialData?.serviceDescription ?? "",
+      attachments: [],
+      tools: {
+        allowHangUp: true,
+        allowCallback: false,
+        liveTransfer: false,
+      },
+    },
+    mode: "onBlur",
+  });
 
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) resolve();
-        else reject(new Error(`Upload failed (${xhr.status})`));
-      };
+  const {
+    handleSubmit,
+    watch,
+    formState: { isSubmitting },
+  } = methods;
 
-      xhr.onerror = () => reject(new Error("Network error during upload"));
-      xhr.send(file);
-    });
-  }
-  const handleFiles = useCallback(async (files: FileList | null) => {
-    if (!files) return;
+  // compute badge from RHF values
+  const w = watch();
+  const basicSettingsMissing = [
+    w.agentName,
+    w.callType,
+    w.language,
+    w.voice,
+    w.prompt,
+    w.model,
+  ].filter((v) => !v).length;
 
-    const added: UploadedFile[] = [];
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const ext = "." + file.name.split(".").pop()?.toLowerCase();
-      if (!ACCEPTED_TYPES.includes(ext)) continue;
+  const saveAgent = async (values: AgentFormValues): Promise<string | null> => {
+    const url = agentId ? `/api/agents/${agentId}` : "/api/agents";
 
-      added.push({
-        name: file.name,
-        size: file.size,
-        file,
-        progress: 0,
-        status: "queued",
+    try {
+      const res = await fetch(url, {
+        method: agentId ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: values.agentName,
+          description: values.description,
+          callType: values.callType,
+          language: values.language,
+          voice: values.voice,
+          prompt: values.prompt,
+          model: values.model,
+          latency: values.latency,
+          speed: values.speed,
+          callScript: values.callScript,
+          serviceDescription: values.serviceDescription,
+          attachments: values.attachments,
+          tools: values.tools,
+        }),
       });
+
+      if (!res.ok) throw new Error("Failed to save agent");
+
+      const data = await res.json();
+      const isUpdate = Boolean(agentId);
+      setAgentId(data?.id);
+      toast.success(`Agent ${isUpdate ? "updated" : "created"} successfully`);
+
+      return data?.id ?? null;
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to save agent");
+      return null;
     }
+  };
 
-    setUploadedFiles((prev) => [...prev, ...added]);
+  const onSubmit = async (values: AgentFormValues) => {
+    await saveAgent(values);
+  };
 
-    for (const f of added) {
-      try {
-        patchFile(f.name, { status: "uploading", progress: 0 });
+  const onStartCall = async (payload: TestCallPayload) => {
+    const isValid = await methods.trigger();
+    if (!isValid) return;
 
-        // Step 1: signed URL (NO body required; send JSON header only if needed)
-        const r1 = await fetch("/api/attachments/upload-url", {
-          method: "POST",
-        });
-        const { key, signedUrl } = await r1.json();
+    const values = methods.getValues();
+    const savedId = await saveAgent(values);
+    if (!savedId) return;
 
-        patchFile(f.name, { key });
-
-        // Step 2: upload with progress
-        await uploadWithProgress(signedUrl, f.file, (pct) => {
-          patchFile(f.name, { progress: pct });
-        });
-
-        patchFile(f.name, { status: "registering" });
-
-        // Step 3: register attachment
-        const r3 = await fetch("/api/attachments", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            key,
-            fileName: f.name,
-            fileSize: f.size,
-            mimeType: f.file.type || "application/octet-stream",
-          }),
-        });
-
-        const att = await r3.json();
-        patchFile(f.name, {
-          status: "done",
-          attachmentId: att.id,
-          progress: 100,
-        });
-
-        setIds((prev) => [...prev, att.id]);
-      } catch (err: unknown) {
-        patchFile(f.name, {
-          status: "error",
-          error: getErrorMessage(err),
-        });
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  const removeFile = (index: number) => {
-    setUploadedFiles((prev) => {
-      const fileToRemove = prev[index];
-
-      if (fileToRemove?.attachmentId) {
-        setIds((idsPrev) =>
-          idsPrev.filter((id) => id !== fileToRemove.attachmentId),
-        );
-      }
-
-      return prev.filter((_, i) => i !== index);
+    await fetch(`/api/agents/${savedId}/test-call`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    handleFiles(e.dataTransfer.files);
   };
 
   const heading = mode === "create" ? "Create Agent" : "Edit Agent";
   const saveLabel = mode === "create" ? "Save Agent" : "Save Changes";
-  useEffect(() => {
-    async function fetchData() {
-      const [langs, voices, pormpts, models] = await Promise.all([
-        fetch(`/api/languages`).then((res) => res.json()),
-        fetch(`/api/voices`).then((res) => res.json()),
-        fetch(`/api/prompts`).then((res) => res.json()),
-        fetch(`/api/models`).then((res) => res.json()),
-      ]);
-      setLanguages(langs);
-      setVoices(voices);
-      setPrompts(pormpts);
-      setModels(models);
-    }
-    fetchData();
-  }, []);
 
-  const savedAgent = async () => {
-    if (basicSettingsMissing)
-      return toast.error("Please fill all the required fields");
-    const url = agentId ? `/api/agents/${agentId}` : "/api/agents";
-    try {
-      const res = await fetch(url, {
-        method: agentId ? "PUT" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: agentName,
-          description,
-          callType,
-          language,
-          voice,
-          prompt,
-          model,
-          latency: latency[0],
-          speed: speed[0],
-          callScript,
-          serviceDescription,
-          attachments: ids,
-          tools: {
-            allowHangUp: true,
-            allowCallback: false,
-            liveTransfer: false,
-          },
-        }),
-      });
-      if (!res.ok) {
-        throw new Error("Failed to save agent");
-      }
-      toast.success(`agent ${agentId ? "updated" : "created"} successfully`);
-      const data = await res.json();
-      console.log(data);
-      setAgentId(data?.id);
-      return data?.id;
-    } catch (error) {
-      console.log(error);
-      toast.error("Failed to save agent");
-    }
-  };
-  const handleAgentSave = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    console.log("Agent saved");
-    await savedAgent();
-  };
-
-  const handleStartCall = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    const agentId = await savedAgent();
-    await fetch(`/api/agents/${agentId}/test-call`, {
-      method: "POST",
-
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        firstName: testFirstName,
-        lastName: testLastName,
-        phoneNumber: testPhone,
-        gender: testGender,
-      }),
-    });
-    console.log("Start call");
-  };
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">{heading}</h1>
-        <Button onClick={handleAgentSave}>{saveLabel}</Button>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column — Collapsible Sections */}
-        <div className="lg:col-span-2 flex flex-col gap-4">
-          {/* Section 1: Basic Settings */}
-          <CollapsibleSection
-            title="Basic Settings"
-            description="Add some information about your agent to get started."
-            badge={basicSettingsMissing}
-            defaultOpen
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="agent-name">
-                  Agent Name <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="agent-name"
-                  placeholder="e.g. Sales Assistant"
-                  value={agentName}
-                  onChange={(e) => setAgentName(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Input
-                  id="description"
-                  placeholder="Describe what this agent does..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>
-                  Call Type <span className="text-destructive">*</span>
-                </Label>
-                <Select value={callType} onValueChange={setCallType}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select call type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="inbound">
-                      Inbound (Receive Calls)
-                    </SelectItem>
-                    <SelectItem value="outbound">
-                      Outbound (Make Calls)
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>
-                  Language <span className="text-destructive">*</span>
-                </Label>
-                <Select value={language} onValueChange={setLanguage}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select language" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {languages.map((lang) => (
-                      <SelectItem key={lang?.id} value={lang?.id}>
-                        {lang?.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>
-                  Voice <span className="text-destructive">*</span>
-                </Label>
-                <Select value={voice} onValueChange={setVoice}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select voice" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {voices.map((voice) => (
-                      <SelectItem key={voice?.id} value={voice?.id}>
-                        <span>{voice?.name}</span>
-                        <Badge>{voice.tag}</Badge>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>
-                  Prompt <span className="text-destructive">*</span>
-                </Label>
-                <Select value={prompt} onValueChange={setPrompt}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select prompt" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {prompts.map((prompt) => (
-                      <SelectItem key={prompt?.id} value={prompt?.id}>
-                        {prompt?.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>
-                  Model <span className="text-destructive">*</span>
-                </Label>
-                <Select value={model} onValueChange={setModel}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select model" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {models.map((model) => (
-                      <SelectItem key={model?.id} value={model?.id}>
-                        {model?.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Latency ({latency[0].toFixed(1)}s)</Label>
-                  <Slider
-                    value={latency}
-                    onValueChange={setLatency}
-                    min={0.3}
-                    max={1}
-                    step={0.1}
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>0.3s</span>
-                    <span>1.0s</span>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Speed ({speed[0]}%)</Label>
-                  <Slider
-                    value={speed}
-                    onValueChange={setSpeed}
-                    min={90}
-                    max={130}
-                    step={1}
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>90%</span>
-                    <span>130%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CollapsibleSection>
-
-          {/* Section 2: Call Script */}
-          <CollapsibleSection
-            title="Call Script"
-            description="What would you like the AI agent to say during the call?"
-          >
-            <div className="space-y-2">
-              <Textarea
-                placeholder="Write your call script here..."
-                value={callScript}
-                onChange={(e) => setCallScript(e.target.value)}
-                rows={6}
-                maxLength={20000}
-              />
-              <p className="text-xs text-muted-foreground text-right">
-                {callScript.length}/20000
-              </p>
-            </div>
-          </CollapsibleSection>
-
-          {/* Section 4: Service/Product Description */}
-          <CollapsibleSection
-            title="Service/Product Description"
-            description="Add a knowledge base about your service or product."
-          >
-            <div className="space-y-2">
-              <Textarea
-                placeholder="Describe your service or product..."
-                value={serviceDescription}
-                onChange={(e) => setServiceDescription(e.target.value)}
-                rows={6}
-                maxLength={20000}
-              />
-              <p className="text-xs text-muted-foreground text-right">
-                {serviceDescription.length}/20000
-              </p>
-            </div>
-          </CollapsibleSection>
-
-          {/* Section 5: Reference Data */}
-          {/* Section 5: Reference Data */}
-          <CollapsibleSection
-            title="Reference Data"
-            description="Enhance your agent's knowledge base with uploaded files."
-          >
-            <div className="space-y-4">
-              {/* Drop zone */}
-              <div
-                className={`relative rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
-                  isDragging
-                    ? "border-primary bg-primary/5"
-                    : "border-muted-foreground/25"
-                }`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  className="hidden"
-                  multiple
-                  accept={ACCEPTED_TYPES.join(",")}
-                  onChange={(e) => handleFiles(e.target.files)}
-                />
-
-                <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
-
-                <p className="mt-2 text-sm font-medium">
-                  Drag & drop files here, or{" "}
-                  <button
-                    type="button"
-                    className="text-primary underline"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    browse
-                  </button>
-                </p>
-
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Accepted: .pdf, .doc, .docx, .txt, .csv, .xlsx, .xls
-                </p>
-              </div>
-
-              {/* File list */}
-              {uploadedFiles.length > 0 ? (
-                <div className="space-y-3">
-                  {uploadedFiles.map((f, i) => (
-                    <div
-                      key={i}
-                      className="rounded-md border px-3 py-3 space-y-2"
-                    >
-                      {/* Top row */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-
-                          <span className="text-sm truncate">{f.name}</span>
-
-                          <span className="text-xs text-muted-foreground shrink-0">
-                            {formatFileSize(f.size)}
-                          </span>
-                        </div>
-
-                        {/* Remove button */}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 shrink-0"
-                          onClick={() => removeFile(i)}
-                          disabled={
-                            f.status === "uploading" ||
-                            f.status === "registering"
-                          }
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-
-                      {f.status !== "done" && (
-                        <div className="space-y-1">
-                          {/* Status row */}
-                          <div className="flex justify-between text-xs text-muted-foreground">
-                            <span>
-                              {f.status === "queued" && "Queued"}
-                              {f.status === "uploading" && "Uploading..."}
-                              {f.status === "registering" &&
-                                "Registering attachment..."}
-                              {f.status === "error" &&
-                                (f.error ?? "Upload failed")}
-                            </span>
-
-                            <span>{f.progress ?? 0}%</span>
-                          </div>
-
-                          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                            <div
-                              className="h-full bg-primary transition-all duration-300"
-                              style={{
-                                width: `${f.progress ?? 0}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      {f.status === "done" && (
-                        <p className="text-xs text-green-600 font-medium">
-                          ✅ Uploaded successfully
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-6 text-muted-foreground">
-                  <FileText className="h-10 w-10 mb-2" />
-                  <p className="text-sm">No Files Available</p>
-                </div>
-              )}
-            </div>
-          </CollapsibleSection>
-
-          {/* Section 6: Tools */}
-          <CollapsibleSection
-            title="Tools"
-            description="Tools that allow the AI agent to perform call-handling actions and manage session control."
-          >
-            <FieldGroup className="w-full">
-              <FieldLabel htmlFor="switch-hangup">
-                <Field orientation="horizontal" className="items-center">
-                  <FieldContent>
-                    <FieldTitle>Allow hang up</FieldTitle>
-                    <FieldDescription>
-                      Select if you would like to allow the agent to hang up the
-                      call
-                    </FieldDescription>
-                  </FieldContent>
-                  <Switch id="switch-hangup" />
-                </Field>
-              </FieldLabel>
-              <FieldLabel htmlFor="switch-callback">
-                <Field orientation="horizontal" className="items-center">
-                  <FieldContent>
-                    <FieldTitle>Allow callback</FieldTitle>
-                    <FieldDescription>
-                      Select if you would like to allow the agent to make
-                      callbacks
-                    </FieldDescription>
-                  </FieldContent>
-                  <Switch id="switch-callback" />
-                </Field>
-              </FieldLabel>
-              <FieldLabel htmlFor="switch-transfer">
-                <Field orientation="horizontal" className="items-center">
-                  <FieldContent>
-                    <FieldTitle>Live transfer</FieldTitle>
-                    <FieldDescription>
-                      Select if you want to transfer the call to a human agent
-                    </FieldDescription>
-                  </FieldContent>
-                  <Switch id="switch-transfer" />
-                </Field>
-              </FieldLabel>
-            </FieldGroup>
-          </CollapsibleSection>
+    <FormProvider {...methods}>
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="flex flex-1 flex-col gap-6 p-6"
+      >
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">{heading}</h1>
+          <Button type="submit" disabled={isSubmitting}>
+            {saveLabel}
+          </Button>
         </div>
 
-        {/* Right Column — Sticky Test Call Card */}
-        <div className="lg:col-span-1">
-          <div className="lg:sticky lg:top-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Phone className="h-5 w-5" />
-                  Test Call
-                </CardTitle>
-                <CardDescription>
-                  Make a test call to preview your agent. Each test call will
-                  deduct credits from your account.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="test-first-name">First Name</Label>
-                      <Input
-                        id="test-first-name"
-                        placeholder="John"
-                        value={testFirstName}
-                        onChange={(e) => setTestFirstName(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="test-last-name">Last Name</Label>
-                      <Input
-                        id="test-last-name"
-                        placeholder="Doe"
-                        value={testLastName}
-                        onChange={(e) => setTestLastName(e.target.value)}
-                      />
-                    </div>
-                  </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 flex flex-col gap-4">
+            {/* Section-1 Basic Settings */}
+            <BasicSettings badge={basicSettingsMissing} />
+            {/* Section-2 Call Script */}
+            <CallScript />
+            {/* Section-3 Service Description */}
+            <ServiceDescription />
+            {/* Section-4 Reference Data */}
+            <ReferenceData />
+            {/* Section-5 Tools */}
+            <Tools />
+          </div>
 
-                  <div className="space-y-2">
-                    <Label>Gender</Label>
-                    <Select value={testGender} onValueChange={setTestGender}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select gender" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="test-phone">
-                      Phone Number <span className="text-destructive">*</span>
-                    </Label>
-                    <PhoneInput
-                      defaultCountry="EG"
-                      value={testPhone}
-                      onChange={(value) => setTestPhone(value)}
-                      placeholder="Enter phone number"
-                    />
-                  </div>
-
-                  <Button onClick={handleStartCall} className="w-full">
-                    <Phone className="mr-2 h-4 w-4" />
-                    Start Test Call
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="lg:col-span-1">
+            {/* Section-6 Test Call */}
+            <TestCallCard onStartCall={onStartCall} disabled={isSubmitting} />
           </div>
         </div>
-      </div>
-
-      {/* Sticky bottom save bar */}
-      <div className="sticky bottom-0 -mx-6 -mb-6 border-t bg-background px-6 py-4">
-        <div className="flex justify-end">
-          <Button onClick={handleAgentSave}>{saveLabel}</Button>
+        {/* Sticky bottom save bar */}
+        <div className="sticky bottom-0 -mx-6 -mb-6 border-t bg-background px-6 py-4">
+          <div className="flex justify-end">
+            <Button type="submit" disabled={isSubmitting}>
+              {saveLabel}
+            </Button>
+          </div>
         </div>
-      </div>
-    </div>
+      </form>
+    </FormProvider>
   );
 }

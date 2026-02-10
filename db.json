@@ -254,6 +254,116 @@
         "liveTransfer": false
       },
       "id": 14
+    },
+    {
+      "name": "aaa",
+      "description": "aaaa",
+      "callType": "inbound",
+      "language": "en",
+      "voice": "alloy",
+      "prompt": "sales",
+      "model": "standard",
+      "latency": 0.5,
+      "speed": 110,
+      "callScript": "",
+      "serviceDescription": "",
+      "attachments": [
+        48,
+        49,
+        50
+      ],
+      "tools": {
+        "allowHangUp": true,
+        "allowCallback": false,
+        "liveTransfer": false
+      },
+      "id": 15
+    },
+    {
+      "name": "aaa",
+      "description": "aaa",
+      "callType": "outbound",
+      "language": "ar",
+      "voice": "echo",
+      "prompt": "sales",
+      "model": "standard",
+      "latency": 0.5,
+      "speed": 110,
+      "callScript": "",
+      "serviceDescription": "",
+      "attachments": [],
+      "tools": {
+        "allowHangUp": true,
+        "allowCallback": false,
+        "liveTransfer": false
+      },
+      "id": 16
+    },
+    {
+      "name": "aaa",
+      "description": "aaa",
+      "callType": "inbound",
+      "language": "ar",
+      "voice": "echo",
+      "prompt": "sales",
+      "model": "standard",
+      "latency": 0.5,
+      "speed": 110,
+      "callScript": "",
+      "serviceDescription": "",
+      "attachments": [],
+      "tools": {
+        "allowHangUp": true,
+        "allowCallback": false,
+        "liveTransfer": false
+      },
+      "id": 17
+    },
+    {
+      "name": "aaa",
+      "description": "aaa",
+      "callType": "inbound",
+      "language": "ar",
+      "voice": "echo",
+      "prompt": "support",
+      "model": "standard",
+      "latency": 0.5,
+      "speed": 110,
+      "callScript": "Hi My Name is Momen",
+      "serviceDescription": "",
+      "attachments": [
+        54,
+        55,
+        56,
+        57,
+        58
+      ],
+      "tools": {
+        "allowHangUp": true,
+        "allowCallback": false,
+        "liveTransfer": false
+      },
+      "id": 18
+    },
+    {
+      "name": "aaa",
+      "description": "aaa",
+      "callType": "inbound",
+      "language": "en",
+      "voice": "alloy",
+      "prompt": "sales",
+      "model": "standard",
+      "latency": 0.5,
+      "speed": 110,
+      "callScript": "",
+      "serviceDescription": "",
+      "attachments": [],
+      "tools": {
+        "allowHangUp": true,
+        "allowCallback": true,
+        "liveTransfer": false
+      },
+      "id": 19
     }
   ],
   "attachments": [
@@ -451,6 +561,209 @@
       "fileSize": 1009839,
       "mimeType": "application/pdf",
       "id": 29
+    },
+    {
+      "key": "5dd041d0-7a88-4472-af1e-ec457e017efd",
+      "fileName": "AI-Powered SaaS Platform Pitch - Copy.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 30
+    },
+    {
+      "key": "a0c77b7c-94c7-49ec-ac39-61078758639d",
+      "fileName": "AI-Powered SaaS Platform Pitch.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 31
+    },
+    {
+      "key": "b6e14fdd-ed68-4549-bdff-7a2e7447bf62",
+      "fileName": "Momen Ehab - Full-Stack Next.js Developer - Copy.pdf",
+      "fileSize": 400011,
+      "mimeType": "application/pdf",
+      "id": 32
+    },
+    {
+      "key": "30f0db1d-3b61-41bd-a429-6c9e6225ce88",
+      "fileName": "Momen Ehab - Full-Stack Next.js Developer.pdf",
+      "fileSize": 400011,
+      "mimeType": "application/pdf",
+      "id": 33
+    },
+    {
+      "key": "14c02f5d-eeda-4eaf-9635-e32dee17d92d",
+      "fileName": "Momen_Ehab_ATS_Resume - Copy.docx",
+      "fileSize": 37456,
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "id": 34
+    },
+    {
+      "key": "71056813-9934-4078-b06b-a1151ce8a58a",
+      "fileName": "Momen_Ehab_ATS_Resume.docx",
+      "fileSize": 37456,
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "id": 35
+    },
+    {
+      "key": "83da4a48-2eea-408a-8766-fdbd641a5992",
+      "fileName": "AI-Powered SaaS Platform Pitch - Copy.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 36
+    },
+    {
+      "key": "be3f3694-a208-4421-a929-b4d350858af9",
+      "fileName": "AI-Powered SaaS Platform Pitch.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 37
+    },
+    {
+      "key": "df1dd940-1495-44c9-bf97-80e08a389e50",
+      "fileName": "Momen Ehab - Full-Stack Next.js Developer - Copy.pdf",
+      "fileSize": 400011,
+      "mimeType": "application/pdf",
+      "id": 38
+    },
+    {
+      "key": "bedd577f-b4c1-4cf3-8486-e095c04a4c5a",
+      "fileName": "Momen Ehab - Full-Stack Next.js Developer.pdf",
+      "fileSize": 400011,
+      "mimeType": "application/pdf",
+      "id": 39
+    },
+    {
+      "key": "82d3ec57-db7a-405e-8ca5-8e8d8d4bb723",
+      "fileName": "Momen_Ehab_ATS_Resume - Copy.docx",
+      "fileSize": 37456,
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "id": 40
+    },
+    {
+      "key": "3e546b14-e36a-4d78-a5f2-4ad04e9e71ba",
+      "fileName": "Momen_Ehab_ATS_Resume.docx",
+      "fileSize": 37456,
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "id": 41
+    },
+    {
+      "key": "b7f98bc7-56f9-4655-b255-b0ef191c5f75",
+      "fileName": "AI-Powered SaaS Platform Pitch - Copy.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 42
+    },
+    {
+      "key": "5f6aead7-b3a7-4cb5-a420-7cfedaa4098f",
+      "fileName": "AI-Powered SaaS Platform Pitch - Copy.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 43
+    },
+    {
+      "key": "294fa64b-f00d-4704-8897-53a97651e514",
+      "fileName": "AI-Powered SaaS Platform Pitch.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 44
+    },
+    {
+      "key": "69eafdcd-c603-4a99-ad4a-2b7297749ed7",
+      "fileName": "Momen Ehab - Full-Stack Next.js Developer - Copy.pdf",
+      "fileSize": 400011,
+      "mimeType": "application/pdf",
+      "id": 45
+    },
+    {
+      "key": "cac857d3-f355-493c-980f-ff0f77953450",
+      "fileName": "Momen Ehab - Full-Stack Next.js Developer.pdf",
+      "fileSize": 400011,
+      "mimeType": "application/pdf",
+      "id": 46
+    },
+    {
+      "key": "fa69af73-3b7c-4686-b93f-e88a9917e01d",
+      "fileName": "Momen_Ehab_ATS_Resume - Copy.docx",
+      "fileSize": 37456,
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "id": 47
+    },
+    {
+      "key": "de2adf38-5ea7-42df-9bbc-cc43e6207737",
+      "fileName": "AI-Powered SaaS Platform Pitch - Copy - Copy.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 48
+    },
+    {
+      "key": "3f7d2e29-231c-4847-951a-9af9fae4a8b4",
+      "fileName": "AI-Powered SaaS Platform Pitch - Copy (2).pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 49
+    },
+    {
+      "key": "4f28763f-f85a-425f-be7e-a81627b4afef",
+      "fileName": "AI-Powered SaaS Platform Pitch - Copy.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 50
+    },
+    {
+      "key": "4d877cd6-d238-4be7-a802-a6b955a8aae7",
+      "fileName": "AI-Powered SaaS Platform Pitch.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 51
+    },
+    {
+      "key": "70822cb2-c437-4b3f-9364-64de0aac6200",
+      "fileName": "Momen Ehab - Full-Stack Next.js Developer - Copy - Copy.pdf",
+      "fileSize": 400011,
+      "mimeType": "application/pdf",
+      "id": 52
+    },
+    {
+      "key": "97479da3-f1d7-42a9-9f31-2a396c12d8ff",
+      "fileName": "Momen Ehab - Full-Stack Next.js Developer - Copy.pdf",
+      "fileSize": 400011,
+      "mimeType": "application/pdf",
+      "id": 53
+    },
+    {
+      "key": "6cb04089-9d62-4e0e-975f-01a877b397ec",
+      "fileName": "AI-Powered SaaS Platform Pitch - Copy - Copy.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 54
+    },
+    {
+      "key": "9e4f7a7c-f017-40d6-a2ad-bb7ebf796e44",
+      "fileName": "AI-Powered SaaS Platform Pitch - Copy (2).pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 55
+    },
+    {
+      "key": "a93b653c-688f-4a85-9a23-a4bf83c5b0b2",
+      "fileName": "AI-Powered SaaS Platform Pitch - Copy.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 56
+    },
+    {
+      "key": "f86d08f3-1b65-4818-8d16-cfe8a901d40e",
+      "fileName": "AI-Powered SaaS Platform Pitch.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 57
+    },
+    {
+      "key": "d9329c4a-062c-48e5-bae6-b2c699e870e4",
+      "fileName": "Momen Ehab - Full-Stack Next.js Developer - Copy - Copy.pdf",
+      "fileSize": 400011,
+      "mimeType": "application/pdf",
+      "id": 58
     }
   ]
 }
