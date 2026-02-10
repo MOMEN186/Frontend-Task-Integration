@@ -1,13 +1,7 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
-import {
-  ChevronDown,
-  Upload,
-  X,
-  FileText,
-  Phone,
-} from "lucide-react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { ChevronDown, Upload, X, FileText, Phone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -41,6 +35,7 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -88,9 +83,7 @@ function CollapsibleSection({
               </div>
               <div className="flex items-center gap-2">
                 {badge !== undefined && badge > 0 && (
-                  <Badge variant="destructive">
-                    {badge} required
-                  </Badge>
+                  <Badge variant="destructive">{badge} required</Badge>
                 )}
                 <ChevronDown
                   className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${
@@ -128,6 +121,27 @@ interface AgentFormProps {
   mode: "create" | "edit";
   initialData?: AgentFormInitialData;
 }
+interface LanguagesDropdown {
+  code: string;
+  id: string;
+  name: string;
+}
+interface VoicesDropdown {
+  id: string;
+  name: string;
+  tag: string;
+  language: string;
+}
+interface ModelsDropdown {
+  id: string;
+  name: string;
+  description: string;
+}
+interface PromptsDropdown {
+  id: string;
+  name: string;
+  description: string;
+}
 
 export function AgentForm({ mode, initialData }: AgentFormProps) {
   // Form state — initialized from initialData when provided
@@ -137,15 +151,25 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
   const [voice, setVoice] = useState(initialData?.voice ?? "");
   const [prompt, setPrompt] = useState(initialData?.prompt ?? "");
   const [model, setModel] = useState(initialData?.model ?? "");
+
   const [latency, setLatency] = useState([initialData?.latency ?? 0.5]);
   const [speed, setSpeed] = useState([initialData?.speed ?? 110]);
-  const [description, setDescription] = useState(initialData?.description ?? "");
+  const [description, setDescription] = useState(
+    initialData?.description ?? "",
+  );
+  // dropdown Data
+  const [languages, setLanguages] = useState<LanguagesDropdown[]>([]);
+  const [voices, setVoices] = useState<VoicesDropdown[]>([]);
+  const [models, setModels] = useState<ModelsDropdown[]>([]);
+  const [prompts, setPrompts] = useState<PromptsDropdown[]>([]);
 
   // Call Script
   const [callScript, setCallScript] = useState(initialData?.callScript ?? "");
 
   // Service/Product Description
-  const [serviceDescription, setServiceDescription] = useState(initialData?.serviceDescription ?? "");
+  const [serviceDescription, setServiceDescription] = useState(
+    initialData?.serviceDescription ?? "",
+  );
 
   // Reference Data
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
@@ -159,9 +183,14 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
   const [testPhone, setTestPhone] = useState("");
 
   // Badge counts for required fields
-  const basicSettingsMissing = [agentName, callType, language, voice, prompt, model].filter(
-    (v) => !v
-  ).length;
+  const basicSettingsMissing = [
+    agentName,
+    callType,
+    language,
+    voice,
+    prompt,
+    model,
+  ].filter((v) => !v).length;
 
   // File upload handlers
   const ACCEPTED_TYPES = [
@@ -188,7 +217,7 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
       setUploadedFiles((prev) => [...prev, ...newFiles]);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [],
   );
 
   const removeFile = (index: number) => {
@@ -213,7 +242,21 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
 
   const heading = mode === "create" ? "Create Agent" : "Edit Agent";
   const saveLabel = mode === "create" ? "Save Agent" : "Save Changes";
-
+  useEffect(() => {
+    async function fetchData() {
+      const [lans, voices, pormpts, models] = await Promise.all([
+        fetch(`/mock/api/languages`).then((res) => res.json()),
+        fetch(`/mock/api/voices`).then((res) => res.json()),
+        fetch(`/mock/api/prompts`).then((res) => res.json()),
+        fetch(`/mock/api/models`).then((res) => res.json()),
+      ]);
+      setLanguages(lans);
+      setVoices(voices);
+      setPrompts(pormpts);
+      setModels(models);
+    }
+    fetchData();
+  }, []);
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
@@ -263,8 +306,12 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
                     <SelectValue placeholder="Select call type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="inbound">Inbound (Receive Calls)</SelectItem>
-                    <SelectItem value="outbound">Outbound (Make Calls)</SelectItem>
+                    <SelectItem value="inbound">
+                      Inbound (Receive Calls)
+                    </SelectItem>
+                    <SelectItem value="outbound">
+                      Outbound (Make Calls)
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -278,10 +325,11 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
                     <SelectValue placeholder="Select language" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="ar">Arabic</SelectItem>
-                    <SelectItem value="fr">French</SelectItem>
-                    <SelectItem value="es">Spanish</SelectItem>
+                    {languages.map((lang) => (
+                      <SelectItem key={lang?.id} value={lang?.id}>
+                        {lang?.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -295,12 +343,12 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
                     <SelectValue placeholder="Select voice" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="alloy">Alloy</SelectItem>
-                    <SelectItem value="echo">Echo</SelectItem>
-                    <SelectItem value="fable">Fable</SelectItem>
-                    <SelectItem value="onyx">Onyx</SelectItem>
-                    <SelectItem value="nova">Nova</SelectItem>
-                    <SelectItem value="shimmer">Shimmer</SelectItem>
+                    {voices.map((voice) => (
+                      <SelectItem key={voice?.id} value={voice?.id}>
+                        <span>{voice?.name}</span>
+                        <Badge>{voice.tag}</Badge>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -314,10 +362,11 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
                     <SelectValue placeholder="Select prompt" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="default">Default Prompt</SelectItem>
-                    <SelectItem value="sales">Sales Prompt</SelectItem>
-                    <SelectItem value="support">Support Prompt</SelectItem>
-                    <SelectItem value="custom">Custom Prompt</SelectItem>
+                    {prompts.map((prompt) => (
+                      <SelectItem key={prompt?.id} value={prompt?.id}>
+                        {prompt?.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -331,9 +380,11 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
                     <SelectValue placeholder="Select model" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pro">Pro</SelectItem>
-                    <SelectItem value="standard">Standard</SelectItem>
-                    <SelectItem value="flex">Flex</SelectItem>
+                    {models.map((model) => (
+                      <SelectItem key={model?.id} value={model?.id}>
+                        {model?.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -369,7 +420,6 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
                   </div>
                 </div>
               </div>
-
             </div>
           </CollapsibleSection>
 
@@ -498,7 +548,8 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
                   <FieldContent>
                     <FieldTitle>Allow hang up</FieldTitle>
                     <FieldDescription>
-                      Select if you would like to allow the agent to hang up the call
+                      Select if you would like to allow the agent to hang up the
+                      call
                     </FieldDescription>
                   </FieldContent>
                   <Switch id="switch-hangup" />
@@ -509,7 +560,8 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
                   <FieldContent>
                     <FieldTitle>Allow callback</FieldTitle>
                     <FieldDescription>
-                      Select if you would like to allow the agent to make callbacks
+                      Select if you would like to allow the agent to make
+                      callbacks
                     </FieldDescription>
                   </FieldContent>
                   <Switch id="switch-callback" />
@@ -528,7 +580,6 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
               </FieldLabel>
             </FieldGroup>
           </CollapsibleSection>
-
         </div>
 
         {/* Right Column — Sticky Test Call Card */}
