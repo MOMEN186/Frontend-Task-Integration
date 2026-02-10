@@ -364,6 +364,46 @@
         "liveTransfer": false
       },
       "id": 19
+    },
+    {
+      "name": "aaa",
+      "description": "aaa",
+      "callType": "inbound",
+      "language": "ar",
+      "voice": "echo",
+      "prompt": "sales",
+      "model": "standard",
+      "latency": 0.5,
+      "speed": 110,
+      "callScript": "",
+      "serviceDescription": "",
+      "attachments": [],
+      "tools": {
+        "allowHangUp": true,
+        "allowCallback": false,
+        "liveTransfer": false
+      },
+      "id": 20
+    },
+    {
+      "name": "aaa",
+      "description": "aaa",
+      "callType": "inbound",
+      "language": "ar",
+      "voice": "echo",
+      "prompt": "sales",
+      "model": "standard",
+      "latency": 0.5,
+      "speed": 110,
+      "callScript": "Hi , I am Momen",
+      "serviceDescription": "",
+      "attachments": [],
+      "tools": {
+        "allowHangUp": true,
+        "allowCallback": true,
+        "liveTransfer": true
+      },
+      "id": 21
     }
   ],
   "attachments": [
@@ -764,6 +804,104 @@
       "fileSize": 400011,
       "mimeType": "application/pdf",
       "id": 58
+    },
+    {
+      "key": "c8c31d8e-a7d6-48ee-bdf0-c0c3aa6fadb3",
+      "fileName": "AI-Powered SaaS Platform Pitch - Copy - Copy.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 59
+    },
+    {
+      "key": "3b60583b-0b5a-457f-88a7-eff430650c7a",
+      "fileName": "AI-Powered SaaS Platform Pitch - Copy (2).pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 60
+    },
+    {
+      "key": "c82634bf-b57a-41ee-87b4-b300215731dd",
+      "fileName": "AI-Powered SaaS Platform Pitch - Copy.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 61
+    },
+    {
+      "key": "af31c634-f864-4617-9c51-8ce6d549ce70",
+      "fileName": "AI-Powered SaaS Platform Pitch.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 62
+    },
+    {
+      "key": "ad337748-8a4c-40da-9a52-a1d9920d900c",
+      "fileName": "Momen Ehab - Full-Stack Next.js Developer - Copy - Copy.pdf",
+      "fileSize": 400011,
+      "mimeType": "application/pdf",
+      "id": 63
+    },
+    {
+      "key": "f1e0fd90-38a1-49f8-942f-0da294819796",
+      "fileName": "Momen Ehab - Full-Stack Next.js Developer - Copy.pdf",
+      "fileSize": 400011,
+      "mimeType": "application/pdf",
+      "id": 64
+    },
+    {
+      "key": "a92b2fdb-3443-4b68-9419-49b5420156f9",
+      "fileName": "AI-Powered SaaS Platform Pitch - Copy - Copy.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 65
+    },
+    {
+      "key": "4f467e86-b290-4d2c-b19a-30b140882c92",
+      "fileName": "AI-Powered SaaS Platform Pitch - Copy (2).pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 66
+    },
+    {
+      "key": "515d6385-0b98-4d20-8f74-52aece44e6f1",
+      "fileName": "AI-Powered SaaS Platform Pitch - Copy.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 67
+    },
+    {
+      "key": "7af27a4a-2f09-4223-a4a0-a7dfbfc194b9",
+      "fileName": "AI-Powered SaaS Platform Pitch.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 68
+    },
+    {
+      "key": "3df27a5e-ca15-4f97-8156-7b8521c96eed",
+      "fileName": "Momen Ehab - Full-Stack Next.js Developer - Copy - Copy.pdf",
+      "fileSize": 400011,
+      "mimeType": "application/pdf",
+      "id": 69
+    },
+    {
+      "key": "187f795a-d6a7-442a-aa7a-2abfb7fae5c8",
+      "fileName": "AI-Powered SaaS Platform Pitch - Copy - Copy.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 70
+    },
+    {
+      "key": "151813f4-cc33-49bc-ab10-f78fc77e5cf4",
+      "fileName": "AI-Powered SaaS Platform Pitch - Copy (2).pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 71
+    },
+    {
+      "key": "4373f137-8d8a-426e-89c7-6e26bdd71940",
+      "fileName": "AI-Powered SaaS Platform Pitch - Copy.pdf",
+      "fileSize": 2410975,
+      "mimeType": "application/pdf",
+      "id": 72
     }
   ]
 }

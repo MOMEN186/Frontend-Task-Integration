@@ -73,20 +73,24 @@ function ReferenceData() {
 
   // RHF field (the one you submit)
   const attachments = watch("attachments") ?? [];
-
+  const initialized = useRef(false);
   // UI state
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const patchFile = (localId: string, patch: Partial<UploadedFile>) => {
-    setUploadedFiles((prev) =>
-      prev.map((f) => (f.localId === localId ? { ...f, ...patch } : f)),
-    );
-  };
+  const patchFile = useCallback(
+    (localId: string, patch: Partial<UploadedFile>) => {
+      setUploadedFiles((prev) =>
+        prev.map((f) => (f.localId === localId ? { ...f, ...patch } : f)),
+      );
+    },
+    [],
+  );
 
   // keep RHF in sync with completed attachment IDs
   useEffect(() => {
+    if (initialized.current) return;
     const doneIds = uploadedFiles
       .map((f) => f.attachmentId)
       .filter(Boolean) as string[];
@@ -97,76 +101,88 @@ function ReferenceData() {
     if (a !== b) setValue("attachments", doneIds, { shouldDirty: true });
   }, [uploadedFiles, attachments, setValue]);
 
-  const handleFiles = useCallback(async (files: FileList | null) => {
-    if (!files) return;
+  const handleFiles = useCallback(
+    async (files: FileList | null) => {
+      if (!files) return;
+      initialized.current = true;
+      const added: UploadedFile[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const ext = "." + file.name.split(".").pop()?.toLowerCase();
+        if (!ACCEPTED_TYPES.includes(ext)) continue;
 
-    const added: UploadedFile[] = [];
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const ext = "." + file.name.split(".").pop()?.toLowerCase();
-      if (!ACCEPTED_TYPES.includes(ext)) continue;
+        const localId =
+          globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
 
-      const localId =
-        globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
-
-      added.push({
-        localId,
-        name: file.name,
-        size: file.size,
-        file,
-        progress: 0,
-        status: "queued",
-      });
-    }
-
-    if (added.length === 0) return;
-
-    setUploadedFiles((prev) => [...prev, ...added]);
-
-    for (const f of added) {
-      try {
-        patchFile(f.localId, { status: "uploading", progress: 0 });
-
-        // 1) signed url
-        const r1 = await fetch("/api/attachments/upload-url", {
-          method: "POST",
+        added.push({
+          localId,
+          name: file.name,
+          size: file.size,
+          file,
+          progress: 0,
+          status: "queued",
         });
-        const { key, signedUrl } = await r1.json();
-        patchFile(f.localId, { key });
-
-        // 2) upload
-        await uploadWithProgress(signedUrl, f.file, (pct) => {
-          patchFile(f.localId, { progress: pct });
-        });
-
-        patchFile(f.localId, { status: "registering" });
-
-        // 3) register attachment
-        const r3 = await fetch("/api/attachments", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            key,
-            fileName: f.name,
-            fileSize: f.size,
-            mimeType: f.file.type || "application/octet-stream",
-          }),
-        });
-
-        const att = await r3.json();
-
-        patchFile(f.localId, {
-          status: "done",
-          attachmentId: att.id,
-          progress: 100,
-        });
-      } catch (err: unknown) {
-        patchFile(f.localId, { status: "error", error: getErrorMessage(err) });
       }
-    }
-  }, []);
+
+      if (added.length === 0) return;
+
+      setUploadedFiles((prev) => [...prev, ...added]);
+
+      for (const f of added) {
+        try {
+          patchFile(f.localId, { status: "uploading", progress: 0 });
+
+          // 1) signed url
+          const r1 = await fetch("/api/attachments/upload-url", {
+            method: "POST",
+          });
+          if (!r1.ok) {
+            throw new Error("Failed to get upload url");
+          }
+          const { key, signedUrl } = await r1.json();
+          patchFile(f.localId, { key });
+
+          // 2) upload
+          await uploadWithProgress(signedUrl, f.file, (pct) => {
+            patchFile(f.localId, { progress: pct });
+          });
+
+          patchFile(f.localId, { status: "registering" });
+
+          // 3) register attachment
+          const r3 = await fetch("/api/attachments", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              key,
+              fileName: f.name,
+              fileSize: f.size,
+              mimeType: f.file.type || "application/octet-stream",
+            }),
+          });
+          if (!r3.ok) {
+            throw new Error("Failed to register attachment");
+          }
+          const att = await r3.json();
+
+          patchFile(f.localId, {
+            status: "done",
+            attachmentId: att.id,
+            progress: 100,
+          });
+        } catch (err: unknown) {
+          patchFile(f.localId, {
+            status: "error",
+            error: getErrorMessage(err),
+          });
+        }
+      }
+    },
+    [patchFile],
+  );
 
   const removeFile = (localId: string) => {
+    initialized.current = true;
     setUploadedFiles((prev) => prev.filter((f) => f.localId !== localId));
     // RHF updates automatically via useEffect sync above
   };

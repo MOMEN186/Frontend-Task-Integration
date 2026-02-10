@@ -11,7 +11,6 @@ import Tools from "./Tools";
 import ReferenceData from "./ReferenceData";
 import TestCallCard, { TestCallPayload } from "./TestCallCard";
 import type { AgentFormInitialData, AgentFormValues } from "@/types/agent";
-import { useRouter } from "next/navigation";
 
 type AgentFormProps = {
   mode: "create" | "edit";
@@ -106,7 +105,7 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
 
       const data = await res.json();
       const isUpdate = Boolean(agentId);
-      setAgentId(data?.id);
+      setAgentId(data?.id ?? null);
       toast.success(`Agent ${isUpdate ? "updated" : "created"} successfully`);
       methods.reset(values);
       return data?.id ?? null;
@@ -129,11 +128,31 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
     const savedId = await saveAgent(values);
     if (!savedId) return;
 
-    await fetch(`/api/agents/${savedId}/test-call`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const res = await fetch(`/api/agents/${savedId}/test-call`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        // try to read a message from API
+        let message = "Failed to start test call";
+        try {
+          const body = await res.json();
+          if (typeof body?.message === "string") message = body.message;
+        } catch {
+          // ignore json parse errors
+        }
+        toast.error(message);
+        return;
+      }
+
+      toast.success("Test call started");
+    } catch (e) {
+      console.error(e);
+      toast.error("Network error while starting test call");
+    }
   };
 
   const heading = mode === "create" ? "Create Agent" : "Edit Agent";

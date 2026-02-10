@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
-
-import CollapsibleSection from "./CollapsibleSection"; // adjust path if needed
+import CollapsibleSection from "./CollapsibleSection";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
+
+import type {
   AgentFormValues,
   LanguagesDropdown,
   ModelsDropdown,
@@ -24,22 +24,26 @@ import {
   VoicesDropdown,
 } from "@/types/agent";
 
-type Props = {
-  badge: number;
-};
+type Props = { badge: number };
 
 export default function BasicSettings({ badge }: Props) {
   const {
     register,
     control,
+    watch,
     formState: { errors },
   } = useFormContext<AgentFormValues>();
+
+  // ✅ public API for labels
+  const latencyValue = watch("latency") ?? 0.5;
+  const speedValue = watch("speed") ?? 110;
 
   const [languages, setLanguages] = useState<LanguagesDropdown[]>([]);
   const [voices, setVoices] = useState<VoicesDropdown[]>([]);
   const [models, setModels] = useState<ModelsDropdown[]>([]);
   const [prompts, setPrompts] = useState<PromptsDropdown[]>([]);
   const [loading, setLoading] = useState(false);
+
   useEffect(() => {
     const controller = new AbortController();
     const { signal } = controller;
@@ -50,10 +54,9 @@ export default function BasicSettings({ badge }: Props) {
       return res.json();
     }
 
-    async function fetchData() {
+    (async () => {
       try {
         setLoading(true);
-
         const [langs, voicesRes, promptsRes, modelsRes] = await Promise.all([
           fetchJson<LanguagesDropdown[]>(`/api/languages`),
           fetchJson<VoicesDropdown[]>(`/api/voices`),
@@ -66,21 +69,16 @@ export default function BasicSettings({ badge }: Props) {
         setPrompts(promptsRes ?? []);
         setModels(modelsRes ?? []);
       } catch (e: unknown) {
-        // ignore abort errors
         if (e instanceof DOMException && e.name === "AbortError") return;
-
         console.error(e);
         setLanguages([]);
         setVoices([]);
         setPrompts([]);
         setModels([]);
       } finally {
-        // don’t set loading if aborted (optional but nice)
         if (!signal.aborted) setLoading(false);
       }
-    }
-
-    fetchData();
+    })();
 
     return () => controller.abort();
   }, []);
@@ -125,7 +123,6 @@ export default function BasicSettings({ badge }: Props) {
           <Label>
             Call Type <span className="text-destructive">*</span>
           </Label>
-
           <Controller
             control={control}
             name="callType"
@@ -154,7 +151,6 @@ export default function BasicSettings({ badge }: Props) {
           <Label>
             Language <span className="text-destructive">*</span>
           </Label>
-
           <Controller
             control={control}
             name="language"
@@ -184,7 +180,6 @@ export default function BasicSettings({ badge }: Props) {
           <Label>
             Voice <span className="text-destructive">*</span>
           </Label>
-
           <Controller
             control={control}
             name="voice"
@@ -217,7 +212,6 @@ export default function BasicSettings({ badge }: Props) {
           <Label>
             Prompt <span className="text-destructive">*</span>
           </Label>
-
           <Controller
             control={control}
             name="prompt"
@@ -247,7 +241,6 @@ export default function BasicSettings({ badge }: Props) {
           <Label>
             Model <span className="text-destructive">*</span>
           </Label>
-
           <Controller
             control={control}
             name="model"
@@ -274,23 +267,11 @@ export default function BasicSettings({ badge }: Props) {
 
         {/* Latency + Speed */}
         <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Latency */}
           <div className="space-y-2">
-            <Label>
-              Latency{" "}
-              <span className="text-muted-foreground">
-                (
-                {typeof control._formValues?.latency === "number"
-                  ? control._formValues.latency.toFixed(1)
-                  : "0.5"}
-                s)
-              </span>
-            </Label>
-
+            <Label>Latency ({latencyValue.toFixed(1)}s)</Label>
             <Controller
               control={control}
               name="latency"
-              rules={{ required: "Latency is required" }}
               render={({ field }) => (
                 <>
                   <Slider
@@ -307,26 +288,13 @@ export default function BasicSettings({ badge }: Props) {
                 </>
               )}
             />
-            {fieldError(errors.latency?.message as string | undefined)}
           </div>
 
-          {/* Speed */}
           <div className="space-y-2">
-            <Label>
-              Speed{" "}
-              <span className="text-muted-foreground">
-                (
-                {typeof control._formValues?.speed === "number"
-                  ? control._formValues.speed
-                  : 110}
-                %)
-              </span>
-            </Label>
-
+            <Label>Speed ({speedValue}%)</Label>
             <Controller
               control={control}
               name="speed"
-              rules={{ required: "Speed is required" }}
               render={({ field }) => (
                 <>
                   <Slider
@@ -343,7 +311,6 @@ export default function BasicSettings({ badge }: Props) {
                 </>
               )}
             />
-            {fieldError(errors.speed?.message as string | undefined)}
           </div>
         </div>
       </div>
