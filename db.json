@@ -218,6 +218,33 @@
       "model": "standard",
       "latency": 0.5,
       "speed": 110,
+      "callScript": "Hi My name is momen",
+      "serviceDescription": "",
+      "attachments": [
+        24,
+        25,
+        26,
+        27,
+        28,
+        29
+      ],
+      "tools": {
+        "allowHangUp": true,
+        "allowCallback": false,
+        "liveTransfer": false
+      },
+      "id": 13
+    },
+    {
+      "name": "aaa",
+      "description": "aaa",
+      "callType": "outbound",
+      "language": "ar",
+      "voice": "alloy",
+      "prompt": "sales",
+      "model": "standard",
+      "latency": 0.5,
+      "speed": 110,
       "callScript": "",
       "serviceDescription": "",
       "attachments": [],
@@ -226,7 +253,7 @@
         "allowCallback": false,
         "liveTransfer": false
       },
-      "id": 13
+      "id": 14
     }
   ],
   "attachments": [

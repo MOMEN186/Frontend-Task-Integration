@@ -19,6 +19,8 @@ import {
   FieldLabel,
   FieldTitle,
 } from "@/components/ui/field";
+import { toast } from "sonner";
+
 import {
   Card,
   CardContent,
@@ -38,6 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Toast } from "radix-ui";
 
 type UploadedFile = {
   name: string;
@@ -363,7 +366,7 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
 
   const savedAgent = async () => {
     if (basicSettingsMissing)
-      return window.alert("Please fill all the required fields");
+      return toast.error("Please fill all the required fields");
     const url = agentId ? `/api/agents/${agentId}` : "/api/agents";
     try {
       const res = await fetch(url, {
@@ -394,13 +397,14 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
       if (!res.ok) {
         throw new Error("Failed to save agent");
       }
-      window.alert(`agent ${agentId ? "updated" : "created"} successfully`);
+      toast.success(`agent ${agentId ? "updated" : "created"} successfully`);
       const data = await res.json();
       console.log(data);
       setAgentId(data?.id);
       return data?.id;
     } catch (error) {
       console.log(error);
+      toast.error("Failed to save agent");
     }
   };
   const handleAgentSave = async (e: React.MouseEvent) => {
