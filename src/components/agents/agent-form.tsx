@@ -1,7 +1,7 @@
 "use client";
 
 import { FormProvider, useForm } from "react-hook-form";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import BasicSettings from "./BasicSettings";
@@ -11,6 +11,7 @@ import Tools from "./Tools";
 import ReferenceData from "./ReferenceData";
 import TestCallCard, { TestCallPayload } from "./TestCallCard";
 import type { AgentFormInitialData, AgentFormValues } from "@/types/agent";
+import { useRouter } from "next/navigation";
 
 type AgentFormProps = {
   mode: "create" | "edit";
@@ -21,7 +22,6 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
   const [agentId, setAgentId] = useState<string | null>(
     initialData?.id ?? null,
   );
-
   const methods = useForm<AgentFormValues>({
     defaultValues: {
       agentName: initialData?.agentName ?? "",
@@ -49,7 +49,7 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
   const {
     handleSubmit,
     watch,
-    formState: { isSubmitting },
+    formState: { isSubmitting, isDirty },
   } = methods;
 
   // compute badge from RHF values
@@ -62,6 +62,21 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
     w.prompt,
     w.model,
   ].filter((v) => !v).length;
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!isDirty) return;
+
+      event.preventDefault();
+      event.returnValue = ""; // required for Chrome
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isDirty]);
 
   const saveAgent = async (values: AgentFormValues): Promise<string | null> => {
     const url = agentId ? `/api/agents/${agentId}` : "/api/agents";
@@ -93,7 +108,7 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
       const isUpdate = Boolean(agentId);
       setAgentId(data?.id);
       toast.success(`Agent ${isUpdate ? "updated" : "created"} successfully`);
-
+      methods.reset(values);
       return data?.id ?? null;
     } catch (e) {
       console.error(e);
