@@ -1,13 +1,10 @@
 "use client";
-
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useFormContext } from "react-hook-form";
 import { Upload, X, FileText } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import CollapsibleSection from "./CollapsibleSection";
 import { AgentFormValues } from "@/types/agent";
-
 type UploadStatus = "queued" | "uploading" | "registering" | "done" | "error";
 
 type UploadedFile = {
