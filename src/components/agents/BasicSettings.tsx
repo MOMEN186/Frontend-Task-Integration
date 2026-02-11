@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import CollapsibleSection from "./CollapsibleSection";
 
@@ -15,6 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+import { Loader2 } from "lucide-react";
 
 import type {
   AgentFormValues,
@@ -34,7 +36,6 @@ export default function BasicSettings({ badge }: Props) {
     formState: { errors },
   } = useFormContext<AgentFormValues>();
 
-  // ✅ public API for labels
   const latencyValue = watch("latency") ?? 0.5;
   const speedValue = watch("speed") ?? 110;
 
@@ -42,7 +43,27 @@ export default function BasicSettings({ badge }: Props) {
   const [voices, setVoices] = useState<VoicesDropdown[]>([]);
   const [models, setModels] = useState<ModelsDropdown[]>([]);
   const [prompts, setPrompts] = useState<PromptsDropdown[]>([]);
-  const [loading, setLoading] = useState(false);
+
+  // Loading + error per dropdown (nice UX: independent states)
+  const [loading, setLoading] = useState({
+    languages: false,
+    voices: false,
+    prompts: false,
+    models: false,
+  });
+
+  const [loadError, setLoadError] = useState({
+    languages: "",
+    voices: "",
+    prompts: "",
+    models: "",
+  });
+
+  const anyLoading = useMemo(
+    () =>
+      loading.languages || loading.voices || loading.prompts || loading.models,
+    [loading],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -54,37 +75,57 @@ export default function BasicSettings({ badge }: Props) {
       return res.json();
     }
 
-    (async () => {
+    const loadOne = async <T,>(
+      key: keyof typeof loading,
+      url: string,
+      setter: (data: T) => void,
+    ) => {
       try {
-        setLoading(true);
-        const [langs, voicesRes, promptsRes, modelsRes] = await Promise.all([
-          fetchJson<LanguagesDropdown[]>(`/api/languages`),
-          fetchJson<VoicesDropdown[]>(`/api/voices`),
-          fetchJson<PromptsDropdown[]>(`/api/prompts`),
-          fetchJson<ModelsDropdown[]>(`/api/models`),
-        ]);
+        setLoading((prev) => ({ ...prev, [key]: true }));
+        setLoadError((prev) => ({ ...prev, [key]: "" }));
 
-        setLanguages(langs ?? []);
-        setVoices(voicesRes ?? []);
-        setPrompts(promptsRes ?? []);
-        setModels(modelsRes ?? []);
+        const data = await fetchJson<T>(url);
+        if (!signal.aborted) setter(data);
       } catch (e: unknown) {
         if (e instanceof DOMException && e.name === "AbortError") return;
         console.error(e);
-        setLanguages([]);
-        setVoices([]);
-        setPrompts([]);
-        setModels([]);
+
+        // Keep previous values if you prefer; here we clear to avoid stale data.
+        if (!signal.aborted) setter([] as unknown as T);
+
+        setLoadError((prev) => ({
+          ...prev,
+          [key]: "Failed to load data. Please try again.",
+        }));
       } finally {
-        if (!signal.aborted) setLoading(false);
+        if (!signal.aborted) setLoading((prev) => ({ ...prev, [key]: false }));
       }
-    })();
+    };
+
+    // Fetch in parallel but keep individual loading states
+    void Promise.all([
+      loadOne<LanguagesDropdown[]>("languages", "/api/languages", setLanguages),
+      loadOne<VoicesDropdown[]>("voices", "/api/voices", setVoices),
+      loadOne<PromptsDropdown[]>("prompts", "/api/prompts", setPrompts),
+      loadOne<ModelsDropdown[]>("models", "/api/models", setModels),
+    ]);
 
     return () => controller.abort();
   }, []);
 
   const fieldError = (msg?: string) =>
     msg ? <p className="text-xs text-destructive mt-1">{msg}</p> : null;
+
+  const loadErrorText = (msg?: string) =>
+    msg ? <p className="text-xs text-destructive mt-1">{msg}</p> : null;
+
+  // Small helper to show spinner inside the trigger
+  const LoadingTrigger = ({ text }: { text: string }) => (
+    <div className="flex items-center gap-2">
+      <Loader2 className="h-4 w-4 animate-spin" />
+      <span className="text-sm">{text}</span>
+    </div>
+  );
 
   return (
     <CollapsibleSection
@@ -157,22 +198,35 @@ export default function BasicSettings({ badge }: Props) {
             rules={{ required: "Language is required" }}
             render={({ field }) => (
               <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger className="w-full" disabled={loading}>
-                  <SelectValue
-                    placeholder={loading ? "Loading..." : "Select language"}
-                  />
+                <SelectTrigger
+                  className="w-full"
+                  disabled={loading.languages}
+                  aria-busy={loading.languages}
+                >
+                  {loading.languages ? (
+                    <LoadingTrigger text="Loading languages..." />
+                  ) : (
+                    <SelectValue placeholder="Select language" />
+                  )}
                 </SelectTrigger>
                 <SelectContent>
-                  {languages.map((lang) => (
-                    <SelectItem key={lang.id} value={lang.id}>
-                      {lang.name}
-                    </SelectItem>
-                  ))}
+                  {languages.length === 0 && !loading.languages ? (
+                    <div className="px-2 py-2 text-sm text-muted-foreground">
+                      No languages found
+                    </div>
+                  ) : (
+                    languages.map((lang) => (
+                      <SelectItem key={lang.id} value={lang.id}>
+                        {lang.name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             )}
           />
           {fieldError(errors.language?.message)}
+          {loadErrorText(loadError.languages)}
         </div>
 
         {/* Voice */}
@@ -186,25 +240,38 @@ export default function BasicSettings({ badge }: Props) {
             rules={{ required: "Voice is required" }}
             render={({ field }) => (
               <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger className="w-full" disabled={loading}>
-                  <SelectValue
-                    placeholder={loading ? "Loading..." : "Select voice"}
-                  />
+                <SelectTrigger
+                  className="w-full"
+                  disabled={loading.voices}
+                  aria-busy={loading.voices}
+                >
+                  {loading.voices ? (
+                    <LoadingTrigger text="Loading voices..." />
+                  ) : (
+                    <SelectValue placeholder="Select voice" />
+                  )}
                 </SelectTrigger>
                 <SelectContent>
-                  {voices.map((v) => (
-                    <SelectItem key={v.id} value={v.id}>
-                      <div className="flex items-center gap-2">
-                        <span>{v.name}</span>
-                        <Badge>{v.tag}</Badge>
-                      </div>
-                    </SelectItem>
-                  ))}
+                  {voices.length === 0 && !loading.voices ? (
+                    <div className="px-2 py-2 text-sm text-muted-foreground">
+                      No voices found
+                    </div>
+                  ) : (
+                    voices.map((v) => (
+                      <SelectItem key={v.id} value={v.id}>
+                        <div className="flex items-center gap-2">
+                          <span>{v.name}</span>
+                          <Badge>{v.tag}</Badge>
+                        </div>
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             )}
           />
           {fieldError(errors.voice?.message)}
+          {loadErrorText(loadError.voices)}
         </div>
 
         {/* Prompt */}
@@ -218,22 +285,35 @@ export default function BasicSettings({ badge }: Props) {
             rules={{ required: "Prompt is required" }}
             render={({ field }) => (
               <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger className="w-full" disabled={loading}>
-                  <SelectValue
-                    placeholder={loading ? "Loading..." : "Select prompt"}
-                  />
+                <SelectTrigger
+                  className="w-full"
+                  disabled={loading.prompts}
+                  aria-busy={loading.prompts}
+                >
+                  {loading.prompts ? (
+                    <LoadingTrigger text="Loading prompts..." />
+                  ) : (
+                    <SelectValue placeholder="Select prompt" />
+                  )}
                 </SelectTrigger>
                 <SelectContent>
-                  {prompts.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name}
-                    </SelectItem>
-                  ))}
+                  {prompts.length === 0 && !loading.prompts ? (
+                    <div className="px-2 py-2 text-sm text-muted-foreground">
+                      No prompts found
+                    </div>
+                  ) : (
+                    prompts.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             )}
           />
           {fieldError(errors.prompt?.message)}
+          {loadErrorText(loadError.prompts)}
         </div>
 
         {/* Model */}
@@ -247,22 +327,35 @@ export default function BasicSettings({ badge }: Props) {
             rules={{ required: "Model is required" }}
             render={({ field }) => (
               <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger className="w-full" disabled={loading}>
-                  <SelectValue
-                    placeholder={loading ? "Loading..." : "Select model"}
-                  />
+                <SelectTrigger
+                  className="w-full"
+                  disabled={loading.models}
+                  aria-busy={loading.models}
+                >
+                  {loading.models ? (
+                    <LoadingTrigger text="Loading models..." />
+                  ) : (
+                    <SelectValue placeholder="Select model" />
+                  )}
                 </SelectTrigger>
                 <SelectContent>
-                  {models.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>
-                      {m.name}
-                    </SelectItem>
-                  ))}
+                  {models.length === 0 && !loading.models ? (
+                    <div className="px-2 py-2 text-sm text-muted-foreground">
+                      No models found
+                    </div>
+                  ) : (
+                    models.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             )}
           />
           {fieldError(errors.model?.message)}
+          {loadErrorText(loadError.models)}
         </div>
 
         {/* Latency + Speed */}
@@ -280,6 +373,7 @@ export default function BasicSettings({ badge }: Props) {
                     min={0.3}
                     max={1}
                     step={0.1}
+                    disabled={anyLoading}
                   />
                   <div className="flex justify-between text-xs text-muted-foreground">
                     <span>0.3s</span>
@@ -303,6 +397,7 @@ export default function BasicSettings({ badge }: Props) {
                     min={90}
                     max={130}
                     step={1}
+                    disabled={anyLoading}
                   />
                   <div className="flex justify-between text-xs text-muted-foreground">
                     <span>90%</span>
